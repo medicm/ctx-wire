@@ -64,9 +64,15 @@ func Claude(r io.Reader, w io.Writer) error {
 
 func claudeBash(in claudeInput, w io.Writer) error {
 	var ti struct {
-		Command string `json:"command"`
+		Command                   string `json:"command"`
+		DangerouslyDisableSandbox bool   `json:"dangerouslyDisableSandbox"`
 	}
 	if json.Unmarshal(in.ToolInput, &ti) != nil || ti.Command == "" {
+		return nil
+	}
+	// A call that asks to leave the sandbox needs the user's approval, and the
+	// "allow" below would skip that prompt. Step aside so Claude decides.
+	if ti.DangerouslyDisableSandbox {
 		return nil
 	}
 	// Inside a worktree-isolated session Claude Code refuses any command that

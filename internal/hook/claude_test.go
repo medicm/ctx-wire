@@ -170,3 +170,18 @@ func TestClaudeFailsOpenOnGarbage(t *testing.T) {
 		t.Errorf("expected no output on garbage input, got %q", out.String())
 	}
 }
+
+// Keeping dangerouslyDisableSandbox while answering "allow" would run the
+// command outside the sandbox without the approval prompt Claude Code shows
+// for it. Such a call is left to Claude's own permission flow.
+func TestClaudeStepsAsideForSandboxEscape(t *testing.T) {
+	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
+	payload := `{"tool_name":"Bash","tool_input":{"command":"git status","dangerouslyDisableSandbox":true}}`
+	var out bytes.Buffer
+	if err := Claude(strings.NewReader(payload), &out); err != nil {
+		t.Fatalf("Claude: %v", err)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("hook answered a sandbox escape: %s", out.String())
+	}
+}
